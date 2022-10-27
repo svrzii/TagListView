@@ -53,7 +53,10 @@ open class TagView: UIButton {
     @IBInspectable open var paddingX: CGFloat = 5 {
         didSet {
             titleEdgeInsets.left = paddingX
+			titleEdgeInsets.right = paddingX
             updateRightInsets()
+			updateLeftInsets()
+
         }
     }
 
@@ -122,7 +125,8 @@ open class TagView: UIButton {
     // MARK: remove button
     
     let removeButton = CloseButton()
-    
+	let editButton = EditButton()
+
     @IBInspectable open var enableRemoveButton: Bool = false {
         didSet {
             removeButton.isHidden = !enableRemoveButton
@@ -147,6 +151,22 @@ open class TagView: UIButton {
             removeButton.lineColor = removeIconLineColor
         }
     }
+	
+	@IBInspectable open var enableEditButton: Bool = false {
+		didSet {
+			editButton.isHidden = !enableEditButton
+			updateLeftInsets()
+		}
+	}
+
+	@IBInspectable open var editIconImage: UIImage? = nil {
+		didSet {
+//			editButton.image = editIconImage//?.withAlignmentRectInsets(UIEdgeInsets(top: -paddingY, left: -paddingX, bottom: -paddingY, right: -paddingX))
+			editButton.setImage(editIconImage, for: .normal)
+			editButton.imageEdgeInsets = UIEdgeInsets(top: paddingY, left: paddingX, bottom: paddingY, right: paddingX)
+			updateLeftInsets()
+		}
+	}
     
     /// Handles Tap (TouchUpInside)
     open var onTap: ((TagView) -> Void)?
@@ -160,20 +180,30 @@ open class TagView: UIButton {
         setupView()
     }
     
-    public init(title: String) {
+	var instanceUri: String? = nil
+	var uri: String = ""
+	public init(title: String, uri: String) {
         super.init(frame: CGRect.zero)
         setTitle(title, for: UIControl.State())
-        
+		self.uri = uri
         setupView()
     }
+	
+	public init(title: String) {
+		super.init(frame: CGRect.zero)
+		setTitle(title, for: UIControl.State())
+		setupView()
+	}
     
     private func setupView() {
         titleLabel?.lineBreakMode = titleLineBreakMode
 
         frame.size = intrinsicContentSize
         addSubview(removeButton)
+		addSubview(editButton)
         removeButton.tagView = self
-        
+		editButton.tagView = self
+
         let longPress = UILongPressGestureRecognizer(target: self, action: #selector(self.longPress))
         self.addGestureRecognizer(longPress)
     }
@@ -194,6 +224,10 @@ open class TagView: UIButton {
         if enableRemoveButton {
             size.width += removeButtonIconSize + paddingX
         }
+		
+		if enableEditButton {
+			size.width += removeButtonIconSize + paddingX
+		}
         return size
     }
     
@@ -205,6 +239,15 @@ open class TagView: UIButton {
             titleEdgeInsets.right = paddingX
         }
     }
+	
+	private func updateLeftInsets() {
+		if enableEditButton {
+			titleEdgeInsets.left = paddingX  + removeButtonIconSize + paddingX
+		}
+		else {
+			titleEdgeInsets.left = paddingX
+		}
+	}
     
     open override func layoutSubviews() {
         super.layoutSubviews()
@@ -214,6 +257,15 @@ open class TagView: UIButton {
             removeButton.frame.size.height = self.frame.height
             removeButton.frame.origin.y = 0
         }
+		
+		if enableEditButton {
+			editButton.imageView?.contentMode = .scaleAspectFit
+			editButton.frame.size.height = self.frame.height
+			editButton.frame.size.width = paddingX + removeButtonIconSize + paddingX
+			editButton.frame.origin.x = 0
+			editButton.frame.origin.y = 0
+			editButton.imageEdgeInsets = UIEdgeInsets(top: paddingY, left: 0, bottom: paddingY, right: 0)
+		}
     }
 }
 

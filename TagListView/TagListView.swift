@@ -11,6 +11,7 @@ import UIKit
 @objc public protocol TagListViewDelegate {
     @objc optional func tagPressed(_ title: String, tagView: TagView, sender: TagListView) -> Void
     @objc optional func tagRemoveButtonPressed(_ title: String, tagView: TagView, sender: TagListView) -> Void
+	@objc optional func tagEditButtonPressed(_ title: String, tagView: TagView, sender: TagListView) -> Void
 }
 
 @IBDesignable
@@ -169,6 +170,24 @@ open class TagListView: UIView {
             }
         }
     }
+	
+	@IBInspectable open dynamic var enableEditButton: Bool = false {
+		didSet {
+			defer { rearrangeViews() }
+			tagViews.forEach {
+				$0.enableEditButton = enableEditButton
+			}
+		}
+	}
+	
+	@IBInspectable open dynamic var editIconImage: UIImage = UIImage() {
+		didSet {
+			defer { rearrangeViews() }
+			tagViews.forEach {
+				$0.editIconImage = editIconImage
+			}
+		}
+	}
     
     @IBInspectable open dynamic var removeButtonIconSize: CGFloat = 12 {
         didSet {
@@ -354,8 +373,11 @@ open class TagListView: UIView {
         tagView.removeButtonIconSize = removeButtonIconSize
         tagView.enableRemoveButton = enableRemoveButton
         tagView.removeIconLineColor = removeIconLineColor
+		tagView.removeButton.addTarget(self, action: #selector(removeButtonPressed(_:)), for: .touchUpInside)
         tagView.addTarget(self, action: #selector(tagPressed(_:)), for: .touchUpInside)
-        tagView.removeButton.addTarget(self, action: #selector(removeButtonPressed(_:)), for: .touchUpInside)
+		tagView.enableEditButton = enableEditButton
+		tagView.editIconImage = editIconImage
+		tagView.editButton.addTarget(self, action: #selector(editButtonPressed(_:)), for: .touchUpInside)
         
         // On long press, deselect all tags except this one
         tagView.onLongPress = { [unowned self] this in
@@ -366,12 +388,52 @@ open class TagListView: UIView {
         
         return tagView
     }
+	
+	private func createNewTagView(_ title: String, uri: String) -> TagView {
+		let tagView = TagView(title: title, uri: uri)
+		tagView.textColor = textColor
+		tagView.selectedTextColor = selectedTextColor
+		tagView.tagBackgroundColor = tagBackgroundColor
+		tagView.highlightedBackgroundColor = tagHighlightedBackgroundColor
+		tagView.selectedBackgroundColor = tagSelectedBackgroundColor
+		tagView.titleLineBreakMode = tagLineBreakMode
+		tagView.cornerRadius = cornerRadius
+		tagView.borderWidth = borderWidth
+		tagView.borderColor = borderColor
+		tagView.selectedBorderColor = selectedBorderColor
+		tagView.paddingX = paddingX
+		tagView.paddingY = paddingY
+		tagView.textFont = textFont
+		tagView.removeIconLineWidth = removeIconLineWidth
+		tagView.removeButtonIconSize = removeButtonIconSize
+		tagView.enableRemoveButton = enableRemoveButton
+		tagView.removeIconLineColor = removeIconLineColor
+		tagView.addTarget(self, action: #selector(tagPressed(_:)), for: .touchUpInside)
+		tagView.removeButton.addTarget(self, action: #selector(removeButtonPressed(_:)), for: .touchUpInside)
+		tagView.enableEditButton = enableEditButton
+		tagView.editIconImage = editIconImage
+		tagView.editButton.addTarget(self, action: #selector(editButtonPressed(_:)), for: .touchUpInside)
+		// On long press, deselect all tags except this one
+		tagView.onLongPress = { [unowned self] this in
+			self.tagViews.forEach {
+				$0.isSelected = $0 == this
+			}
+		}
+		
+		return tagView
+	}
 
     @discardableResult
     open func addTag(_ title: String) -> TagView {
         defer { rearrangeViews() }
         return addTagView(createNewTagView(title))
     }
+	
+	@discardableResult
+	open func addTag(_ title: String, uri: String) -> TagView {
+		defer { rearrangeViews() }
+		return addTagView(createNewTagView(title))
+	}
     
     @discardableResult
     open func addTags(_ titles: [String]) -> [TagView] {
@@ -401,7 +463,6 @@ open class TagListView: UIView {
     open func insertTag(_ title: String, at index: Int) -> TagView {
         return insertTagView(createNewTagView(title), at: index)
     }
-    
 
     @discardableResult
     open func insertTagView(_ tagView: TagView, at index: Int) -> TagView {
@@ -419,6 +480,10 @@ open class TagListView: UIView {
     open func removeTag(_ title: String) {
         tagViews.reversed().filter({ $0.currentTitle == title }).forEach(removeTagView)
     }
+	
+	open func removeTag(uri: String) {
+		tagViews.reversed().filter({ $0.uri == uri }).forEach(removeTagView)
+	}
     
     open func removeTagView(_ tagView: TagView) {
         defer { rearrangeViews() }
@@ -457,4 +522,10 @@ open class TagListView: UIView {
             delegate?.tagRemoveButtonPressed?(tagView.currentTitle ?? "", tagView: tagView, sender: self)
         }
     }
+	
+	@objc func editButtonPressed(_ editButton: EditButton!) {
+		if let tagView = editButton.tagView {
+			delegate?.tagEditButtonPressed?(tagView.currentTitle ?? "", tagView: tagView, sender: self)
+		}
+	}
 }

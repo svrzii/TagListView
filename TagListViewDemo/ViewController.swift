@@ -18,6 +18,8 @@ class ViewController: UIViewController, TagListViewDelegate {
         super.viewDidLoad()
         
         tagListView.delegate = self
+		tagListView.editIconImage = UIImage(named: "edit")!
+		tagListView.enableEditButton = true
         tagListView.addTag("TagListView")
         tagListView.addTag("TEAChart")
         tagListView.addTag("To Be Removed")
