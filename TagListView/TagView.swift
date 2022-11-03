@@ -180,8 +180,7 @@ open class TagView: UIButton {
         setupView()
     }
     
-	public var instanceUri: String? = nil
-	var uri: String = ""
+	public var uri: String = ""
 	public init(title: String, uri: String) {
         super.init(frame: CGRect.zero)
         setTitle(title, for: UIControl.State())
